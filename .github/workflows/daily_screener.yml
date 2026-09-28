@@ -1,0 +1,49 @@
+STREAMING_CHUNK: Setting up workflow metadata and schedule...
+
+name: 港股每日自動選股與網頁發布
+
+on:
+schedule:
+# 港股收盤時間：香港時間 16:30 (對應 UTC 時間 08:30)，週一至週五執行
+- cron: '30 8 * * 1-5'
+
+允許在 GitHub 網頁介面上手動按鈕觸發執行
+
+workflow_dispatch:
+
+給予 GitHub Actions 寫入儲存庫內容的權限，以便發布網頁至 gh-pages 分支
+
+permissions:
+contents: write
+
+jobs:
+run-screener-and-deploy:
+runs-on: ubuntu-latest
+
+steps:
+  # STREAMING_CHUNK: Checking out repository code...
+  - name: Checkout Repository
+    uses: actions/checkout@v4
+
+  # STREAMING_CHUNK: Setting up Python environment...
+  - name: Set up Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.10'
+
+  # STREAMING_CHUNK: Installing Python library dependencies...
+  - name: Install Dependencies
+    run: |
+      python -m pip install --upgrade pip
+      pip install yfinance pandas openpyxl requests
+
+  # STREAMING_CHUNK: Executing the full-market HKEX stock screener script...
+  - name: Run Full Market Stock Screener
+    run: python hk_web_screener.py
+
+  # STREAMING_CHUNK: Deploying generated HTML dashboard to GitHub Pages...
+  - name: Deploy to GitHub Pages
+    uses: peaceiris/actions-gh-pages@v3
+    with:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+      publish_dir: ./
